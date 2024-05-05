@@ -9,8 +9,8 @@
 		frac: number;
 	};
 
-	const noise = new Noise(Math.random());
-	const borderNoise = new Noise(Math.random());
+	const noise = new Noise(2934874);
+	const borderNoise = new Noise(13686);
 
 	const startingRegions = 4;
 
@@ -218,9 +218,10 @@
 	}
 
 	let last: { x: number; y: number } | null = null;
+	let distance: number | null = null;
 </script>
 
-<div class="h-screen w-screen overflow-hidden relative">
+<div class="h-full w-screen overflow-hidden relative">
 	<div
 		class="absolute plane"
 		style:scale
@@ -236,6 +237,7 @@
 			}
 		}}
 		on:mousemove={(ev) => {
+			console.log('move', ev);
 			if (ev.buttons === 4 && last) {
 				left += ev.screenX - last.x;
 				top += ev.screenY - last.y;
@@ -243,7 +245,33 @@
 			}
 		}}
 		on:drag|preventDefault={() => {}}
-		on:touchmove={(ev) => {
+		on:touchstart={(ev) => {
+			if (ev.touches.length == 2) {
+				const [l, r] = ev.touches;
+				distance = Math.sqrt((l.screenX - r.screenX) ** 2 + (l.screenY - r.screenY) ** 2);
+			}
+		}}
+		on:touchmove|preventDefault={(ev) => {
+			if (ev.touches.length == 2) {
+				if (distance != null) {
+					const [l, r] = ev.touches;
+					const newDistance = Math.sqrt(
+						(l.screenX - r.screenX) ** 2 + (l.screenY - r.screenY) ** 2
+					);
+					const diff = distance - newDistance;
+					distance = newDistance;
+					const x = (l.pageX + r.pageX) / 2 - left;
+					const y = (l.pageY + r.pageY) / 2 - top;
+					if (diff > 0) {
+						setScale(Math.pow(0.996, diff), x, y);
+					} else {
+						setScale(Math.pow(1.004, -diff), x, y);
+					}
+					last = null;
+				}
+
+				return;
+			}
 			if (last) {
 				const touch = ev.touches[0];
 				left += touch.screenX - last.x;
@@ -284,10 +312,11 @@
 								(1 - frac) * 255
 							)});"
 							on:mousedown={(ev) =>
-								(ev.button === 0 && onClick(x, y)) || (ev.button === 2 && onClickBucket(x, y))}
+								(ev.button === 0 && (console.log('dupa', ev), onClick(x, y))) ||
+								(ev.button === 2 && onClickBucket(x, y))}
 							on:mouseenter={(ev) => {
 								if (ev.buttons === 1) {
-									onClick(x, y);
+									console.log('dupaw', ev), onClick(x, y);
 								}
 							}}
 							on:contextmenu|preventDefault={() => {}}
